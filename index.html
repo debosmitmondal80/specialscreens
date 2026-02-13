@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Interactive Neon Love</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Neon Love Mobile</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Pacifico&display=swap');
 
@@ -11,158 +11,164 @@
             margin: 0;
             padding: 0;
             background-color: #050505;
+            /* Use dynamic viewport height for mobile browsers */
+            height: 100dvh; 
+            width: 100vw;
             overflow: hidden;
-            height: 100vh;
             font-family: 'Pacifico', cursive;
-            cursor: crosshair; /* Adds to the playful feel */
-            user-select: none; /* Prevents highlighting text by mistake */
+            
+            /* CRITICAL: Disables default touch actions (scrolling/zooming) */
+            touch-action: none; 
+            -webkit-tap-highlight-color: transparent; /* Removes blue tap box on Android */
         }
 
-        /* --- 1. The Rain Styles --- */
+        /* --- Rain Styles --- */
         .neon-text {
             position: absolute;
             top: -10%;
             color: #fff;
             white-space: nowrap;
             z-index: 1;
-            pointer-events: none; /* Let clicks pass through to background */
+            pointer-events: none;
             font-weight: bold;
+            will-change: transform, opacity; /* Hint to mobile GPU */
         }
 
-        /* --- 2. The Trail Styles (Follows Cursor) --- */
+        /* --- Trail Styles (Finger Paint) --- */
         .trail {
             position: absolute;
-            width: 10px;
-            height: 10px;
+            width: 15px; /* Slightly larger for thumb visibility */
+            height: 15px;
             border-radius: 50%;
             background: white;
             pointer-events: none;
             z-index: 100;
-            box-shadow: 0 0 10px #fff, 0 0 20px #ff0054, 0 0 30px #ff0054;
-            animation: fadeOut 1s linear forwards;
+            box-shadow: 0 0 10px #fff, 0 0 20px #ff0054;
+            opacity: 0.8;
         }
 
-        @keyframes fadeOut {
-            0% { opacity: 1; transform: scale(1); }
-            100% { opacity: 0; transform: scale(0); }
-        }
-
-        /* --- 3. The Burst Styles (On Click) --- */
+        /* --- Burst Styles (Tap Explosion) --- */
         .burst-particle {
             position: absolute;
             pointer-events: none;
             z-index: 101;
-            font-size: 20px;
+            font-size: 24px; /* Larger icons for mobile */
         }
 
-        /* --- Hint Text --- */
+        /* --- Helper Text --- */
         .hint {
             position: absolute;
-            bottom: 20px;
-            width: 100%;
-            text-align: center;
-            color: rgba(255, 255, 255, 0.3);
-            font-family: sans-serif;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: rgba(255, 255, 255, 0.2);
+            font-size: 1.5rem;
             pointer-events: none;
-            font-size: 0.8rem;
+            text-align: center;
+            width: 80%;
         }
     </style>
 </head>
 <body>
 
-    <div class="hint">Tap anywhere & move your finger! ✨</div>
+    <div class="hint" id="hint-text">Tap & Drag <br> anywhere! ✨</div>
 
     <script>
-        /* =========================================
-           PART 1: THE NEON RAIN (Background)
-           ========================================= */
-        const messages = ["I Love You", "Te Amo", "Forever", "My Everything", "Be Mine", "XOXO", "Soulmate", "Only You", "❤️"];
+        // --- CONFIGURATION ---
+        const messages = ["I Love You", "Te Amo", "Forever", "My Everything", "Be Mine", "XOXO", "❤️", "😍"];
         const neonColors = ["#ff0054", "#00f2ea", "#bc13fe", "#39ff14", "#ffea00"];
 
+        /* =========================================
+           PART 1: THE NEON RAIN
+           ========================================= */
         function createNeonDrop() {
             const drop = document.createElement('div');
-            const text = messages[Math.floor(Math.random() * messages.length)];
-            const color = neonColors[Math.floor(Math.random() * neonColors.length)];
-            
-            drop.innerText = text;
+            drop.innerText = messages[Math.floor(Math.random() * messages.length)];
             drop.classList.add('neon-text');
-            drop.style.left = Math.random() * 100 + 'vw';
-            drop.style.textShadow = `0 0 5px ${color}, 0 0 10px ${color}, 0 0 20px ${color}`;
             
-            const duration = Math.random() * 3 + 3; // 3 to 6 seconds fall
-            const fontSize = Math.random() * 1.5 + 1;
+            const color = neonColors[Math.floor(Math.random() * neonColors.length)];
+            drop.style.textShadow = `0 0 5px ${color}, 0 0 15px ${color}`;
+            
+            drop.style.left = Math.random() * 90 + 'vw'; // Keep within screen width
+            drop.style.fontSize = (Math.random() * 1.5 + 1.2) + 'rem'; // Readable size on mobile
+            
+            document.body.appendChild(drop);
 
-            drop.style.fontSize = fontSize + 'rem';
-            
-            // Using Web Animations API for smooth fall
-            drop.animate([
+            // Animate using Web Animations API (Better performance on mobile)
+            const animation = drop.animate([
                 { transform: 'translateY(-10vh) scale(0.8)', opacity: 0 },
                 { opacity: 1, offset: 0.1 },
-                { transform: 'translateY(110vh) scale(1)', opacity: 0.5 }
+                { transform: 'translateY(110dvh) scale(1)', opacity: 0.5 }
             ], {
-                duration: duration * 1000,
+                duration: Math.random() * 3000 + 3000, // 3-6 seconds
                 easing: 'linear'
-            }).onfinish = () => drop.remove();
+            });
 
-            document.body.appendChild(drop);
+            animation.onfinish = () => drop.remove();
         }
 
-        setInterval(createNeonDrop, 150);
+        // Slightly slower creation rate for mobile battery life
+        setInterval(createNeonDrop, 200);
 
 
         /* =========================================
-           PART 2: INTERACTIVE TRAIL (Mouse/Touch)
+           PART 2: TOUCH INTERACTION (Unified)
            ========================================= */
-        // We use a throttle to stop too many particles from spawning
-        let isThrottled = false;
+        
+        // Handle both Mouse and Touch with one logic
+        function handleInput(x, y, type) {
+            // Hide the hint text on first touch
+            const hint = document.getElementById('hint-text');
+            if (hint && hint.style.opacity !== '0') hint.style.opacity = '0';
 
+            if (type === 'move') {
+                createTrail(x, y);
+            } else if (type === 'tap') {
+                createBurst(x, y);
+            }
+        }
+
+        // --- TRAIL FUNCTION ---
+        let isThrottled = false;
         function createTrail(x, y) {
             if (isThrottled) return;
             isThrottled = true;
-            setTimeout(() => isThrottled = false, 30); // Runs every 30ms max
+            setTimeout(() => isThrottled = false, 40); // 40ms throttle
 
             const trail = document.createElement('div');
             trail.classList.add('trail');
             trail.style.left = x + 'px';
             trail.style.top = y + 'px';
             
-            // Random color for the trail
             const color = neonColors[Math.floor(Math.random() * neonColors.length)];
-            trail.style.background = color;
-            trail.style.boxShadow = `0 0 10px ${color}, 0 0 20px ${color}`;
-            
+            trail.style.backgroundColor = color;
+            trail.style.boxShadow = `0 0 10px ${color}`;
+
             document.body.appendChild(trail);
-            setTimeout(() => trail.remove(), 1000);
+
+            trail.animate([
+                { transform: 'scale(1)', opacity: 0.8 },
+                { transform: 'scale(0)', opacity: 0 }
+            ], {
+                duration: 800,
+                easing: 'ease-out'
+            }).onfinish = () => trail.remove();
         }
 
-        // Mouse Listener
-        document.addEventListener('mousemove', (e) => createTrail(e.clientX, e.clientY));
-
-        // Touch Listener (Mobile)
-        document.addEventListener('touchmove', (e) => {
-            const touch = e.touches[0];
-            createTrail(touch.clientX, touch.clientY);
-        });
-
-
-        /* =========================================
-           PART 3: CLICK BURST (Explosion)
-           ========================================= */
+        // --- BURST FUNCTION ---
         function createBurst(x, y) {
-            // Create 15 particles per click
-            for (let i = 0; i < 15; i++) {
+            for (let i = 0; i < 12; i++) { // 12 particles is enough for mobile
                 const particle = document.createElement('div');
                 particle.classList.add('burst-particle');
-                particle.innerText = '❤️'; // You can change this to stars or letters
+                particle.innerText = '❤️';
                 particle.style.left = x + 'px';
                 particle.style.top = y + 'px';
                 
-                // Random destination
-                const destX = (Math.random() - 0.5) * 200;
-                const destY = (Math.random() - 0.5) * 200;
-                const rotate = Math.random() * 360;
-
                 document.body.appendChild(particle);
+
+                const destX = (Math.random() - 0.5) * 150;
+                const destY = (Math.random() - 0.5) * 150;
+                const rotate = Math.random() * 360;
 
                 particle.animate([
                     { transform: `translate(0, 0) rotate(0deg)`, opacity: 1 },
@@ -174,11 +180,29 @@
             }
         }
 
-        document.addEventListener('click', (e) => createBurst(e.clientX, e.clientY));
+        /* =========================================
+           PART 3: EVENT LISTENERS (Mobile Specific)
+           ========================================= */
+
+        // Touch Start (Tap)
         document.addEventListener('touchstart', (e) => {
+            // e.preventDefault(); // Prevents mouse emulation, keeping it snappy
             const touch = e.touches[0];
-            createBurst(touch.clientX, touch.clientY);
-        });
+            handleInput(touch.clientX, touch.clientY, 'tap');
+            handleInput(touch.clientX, touch.clientY, 'move'); // Also start trail immediately
+        }, { passive: false });
+
+        // Touch Move (Drag)
+        document.addEventListener('touchmove', (e) => {
+            // Prevent scrolling so the user can draw freely
+            e.preventDefault(); 
+            const touch = e.touches[0];
+            handleInput(touch.clientX, touch.clientY, 'move');
+        }, { passive: false });
+
+        // Mouse Fallbacks (for testing on computer)
+        document.addEventListener('click', (e) => handleInput(e.clientX, e.clientY, 'tap'));
+        document.addEventListener('mousemove', (e) => handleInput(e.clientX, e.clientY, 'move'));
 
     </script>
 </body>
